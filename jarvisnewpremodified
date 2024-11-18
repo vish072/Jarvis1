@@ -1,0 +1,109 @@
+import speech_recognition as sr
+import webbrowser
+import pyttsx3
+import musicLibrary
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
+# Initialize Spotify API
+# sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+#     client_id="fd088de3fcb04053a12fc6a73e3007b1",
+#     client_secret="6acc2d018e9342d48b2f5884ab0a4f69",
+#     redirect_uri="http://localhost:8888/callback/",
+#     scope="user-modify-playback-state user-read-playback-state"
+# ))
+# Declare and assign your Spotify credentials here
+CLIENT_ID = "fd088de3fcb04053a12fc6a73e3007b1"  # Replace with your actual Client ID
+CLIENT_SECRET = "6acc2d018e9342d48b2f5884ab0a4f69"  # Replace with your actual Client Secret
+REDIRECT_URI = "http://localhost:8888/callback/"  # Can be any URI, typically localhost for testing
+
+# Spotify authentication setup using Spotipy
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+    client_id=CLIENT_ID,
+    client_secret=CLIENT_SECRET,
+    redirect_uri=REDIRECT_URI,
+    scope="user-read-playback-state user-modify-playback-state user-read-currently-playing"
+))
+
+
+
+
+
+
+recognizer = sr.Recognizer()
+engine = pyttsx3.init() 
+# newsapi = "cd22e6eb52004887b7d59b4f6f277d1b"
+
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+
+
+def processCommand(c):
+    if "open google" in c.lower():
+        webbrowser.open("https://google.com")
+    elif "open spotify" in c.lower():
+         webbrowser.open("spotify://")
+    elif "open youtube" in c.lower():
+        webbrowser.open("https://youtube.com")
+    elif "open linkedin" in c.lower():
+        webbrowser.open("https://www.linkedin.com/in/vishakha-08855b246/")
+    # elif c.lower().startswith("play"):
+    #     song = c.lower().replace("play", "").strip()
+    #     try:
+    #         link = musicLibrary.music[song]
+    #         webbrowser.open(link)
+    #         speak(f"Playing {song}.")
+    #     except KeyError:
+    #         speak(f"Sorry, I couldn't find the song {song}. Please check your library.")
+    # 
+    elif c.lower().startswith("play"):
+        # Play a song on Spotify
+        song_name = c.lower().replace("play", "").strip()
+        results = sp.search(q=song_name, type='track', limit=1)
+        if results['tracks']['items']:
+            track_uri = results['tracks']['items'][0]['uri']
+            devices = sp.devices()
+            if devices['devices']:
+                sp.start_playback(device_id=devices['devices'][0]['id'], uris=[track_uri])
+                speak(f"Playing {song_name}")
+            else:
+                speak("No active Spotify devices found.")
+        else:
+            speak("Song not found.")
+    # elif "pause" in c.lower():
+    #     sp.pause_playback()
+    #     speak("Playback paused.")
+    # elif "resume" in c.lower():
+    #     sp.start_playback()
+    #     speak("Playback resumed.")
+
+
+
+
+if __name__== "__main__":
+    speak("Initializing Jarvis....")
+    while True:
+        # Listen for the wake word "Jarvis"
+        # obtain audio from the microphone
+        r = sr.Recognizer()
+         
+        print("recognizing...")
+        try:
+            with sr.Microphone() as source:
+                print("Listening...")
+                audio = r.listen(source, timeout=2, phrase_time_limit=1)
+            word = r.recognize_google(audio)
+            if(word.lower() == "jarvis"):
+                speak("Ya")
+                # Listen for command
+                with sr.Microphone() as source:
+                    print("Jarvis Active...")
+                    audio = r.listen(source)
+                    command = r.recognize_google(audio)
+
+                    processCommand(command)
+
+
+        except Exception as e:
+            print("Error; {0}".format(e))
